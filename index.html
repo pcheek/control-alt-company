@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>~/autonomous-companies — Paul Cheek</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0d1117;
+    --bg-soft:   #161b22;
+    --bg-card:   #0a0e14;
+    --border:    #1f2933;
+    --border-2:  #30363d;
+    --fg:        #c9d1d9;
+    --fg-dim:    #7d8590;
+    --fg-muted:  #545d68;
+    --accent:    #7ee787;
+    --accent-2:  #79c0ff;
+    --accent-3:  #ffa657;
+    --accent-4:  #d2a8ff;
+    --accent-5:  #ff7b72;
+    --string:    #a5d6ff;
+    --comment:   #8b949e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+  body {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(126,231,135,0.06), transparent 40%),
+      radial-gradient(circle at 85% 10%, rgba(121,192,255,0.05), transparent 45%);
+    background-attachment: fixed;
+  }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; text-decoration-color: var(--accent-2); text-underline-offset: 3px; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px;
+    background: rgba(13,17,23,0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .topbar .tabs { display: flex; gap: 0; overflow-x: auto; }
+  .tab {
+    padding: 6px 14px;
+    border-right: 1px solid var(--border);
+    color: var(--fg-dim);
+    white-space: nowrap;
+  }
+  .tab.active {
+    background: var(--bg-soft);
+    color: var(--fg);
+    border-top: 2px solid var(--accent);
+    margin-top: -2px;
+    padding-top: 6px;
+  }
+  .topbar .right { color: var(--fg-muted); display: flex; gap: 14px; align-items: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  .terminal {
+    background: var(--bg-card);
+    border: 1px solid var(--border-2);
+    border-radius: 10px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    overflow: hidden;
+    margin-bottom: 56px;
+  }
+  .terminal-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: #161b22;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-2);
+  }
+  .tdot { width: 12px; height: 12px; border-radius: 50%; }
+  .tdot.r { background: #ff5f57; }
+  .tdot.y { background: #febc2e; }
+  .tdot.g { background: #28c840; }
+  .tpath { color: var(--fg-muted); font-size: 12px; margin-left: 14px; }
+  .terminal-body { padding: 22px 26px 30px; }
+
+  .prompt-user { color: var(--accent-3); }
+  .prompt-arrow { color: var(--accent-4); }
+  .cmd { color: var(--fg); }
+  .cmt { color: var(--comment); }
+  .kw  { color: var(--accent-5); }
+  .str { color: var(--string); }
+  .num { color: var(--accent-3); }
+  .var { color: var(--accent-2); }
+  .blink { animation: blink 1.05s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .ascii {
+    color: var(--accent);
+    font-size: 12px;
+    line-height: 1.05;
+    margin: 8px 0 18px;
+    white-space: pre;
+    overflow-x: auto;
+    text-shadow: 0 0 12px rgba(126,231,135,0.25);
+  }
+
+  h1.brand {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 18px 0 6px;
+    color: var(--fg);
+  }
+  h1.brand .plus { color: var(--accent-3); }
+  .tagline { color: var(--fg-dim); font-style: italic; margin-bottom: 24px; }
+
+  .intro-block {
+    border-left: 2px solid var(--accent);
+    padding: 4px 0 4px 18px;
+    margin: 22px 0 8px;
+    color: var(--fg);
+    font-style: italic;
+  }
+  .intro-block .cmt { font-style: normal; }
+
+  section { margin-top: 64px; }
+  .section-head {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 28px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--border-2);
+    flex-wrap: wrap;
+  }
+  .section-head h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--fg);
+  }
+  .section-head h2 .punc { color: var(--accent-5); }
+  .section-head h2 .name { color: var(--accent-4); }
+  .section-head h2 .args { color: var(--accent-3); }
+  .section-head h2 .kw { color: var(--accent-5); }
+  .section-head .meta { color: var(--fg-muted); font-size: 12px; margin-left: auto; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: var(--bg-soft);
+    border: 1px solid var(--border-2);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    position: relative;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(126,231,135,0.15);
+  }
+  .card-img {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    background: #0a0e14;
+    object-fit: cover;
+    display: block;
+    border-bottom: 1px solid var(--border-2);
+    filter: saturate(0.95);
+  }
+  .card.text-only .card-img-placeholder {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        transparent 0,
+        transparent 12px,
+        rgba(126,231,135,0.04) 12px,
+        rgba(126,231,135,0.04) 13px
+      ),
+      var(--bg-card);
+    border-bottom: 1px solid var(--border-2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--fg-muted);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+  }
+  .card-body { padding: 14px 16px 16px; display: flex; flex-direction: column; flex: 1; }
+  .card-meta {
+    display: flex; gap: 8px; align-items: center;
+    font-size: 11px; color: var(--fg-muted);
+    margin-bottom: 8px;
+    text-transform: lowercase;
+    flex-wrap: wrap;
+  }
+  .source {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 2px 8px 2px 6px;
+    border: 1px solid var(--border-2);
+    border-radius: 4px;
+    font-size: 10px;
+    color: var(--accent);
+    background: rgba(126,231,135,0.06);
+    line-height: 1.4;
+  }
+  .source img.favicon {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    background: #fff;
+    display: block;
+    flex-shrink: 0;
+  }
+  .card-title {
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--fg);
+    font-weight: 500;
+    margin: 0 0 12px;
+  }
+  .card a.title-link { color: var(--fg); }
+  .card a.title-link:hover { color: var(--accent-2); }
+  .card-foot {
+    margin-top: auto;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+  .card-foot .open { color: var(--accent-2); font-family: 'JetBrains Mono', monospace; }
+  .card-num {
+    position: absolute;
+    top: 8px; left: 8px;
+    background: rgba(13,17,23,0.85);
+    color: var(--accent);
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid var(--border-2);
+    backdrop-filter: blur(4px);
+    z-index: 2;
+  }
+
+  .speak-card {
+    background: var(--bg-soft);
+    border: 1px solid var(--border-2);
+    border-radius: 10px;
+    padding: 28px 30px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 28px;
+  }
+  .speak-card h3 { margin: 0 0 10px; color: var(--fg); font-size: 18px; }
+  .speak-card p { color: var(--fg-dim); margin: 0; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--accent); color: var(--bg); text-decoration: none; }
+
+  footer {
+    margin-top: 80px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border-2);
+    color: var(--fg-muted);
+    font-size: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  footer .links a { color: var(--fg-dim); margin-right: 14px; }
+  footer .links a:hover { color: var(--accent); }
+
+  .statusline {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #161b22;
+    border-top: 1px solid var(--border);
+    padding: 4px 16px;
+    font-size: 11px;
+    color: var(--fg-muted);
+    display: flex; justify-content: space-between;
+    z-index: 100;
+  }
+  .statusline .left span { color: var(--accent); }
+  .statusline .right span { margin-left: 14px; }
+
+  @media (max-width: 720px) {
+    .ascii { font-size: 8px; }
+    h1.brand { font-size: 28px; }
+    .speak-card { grid-template-columns: 1fr; }
+    .topbar .tabs .tab:not(.active) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tabs">
+    <span class="tab active">autonomous-companies.md</span>
+    <span class="tab">README.md</span>
+    <span class="tab">articles/</span>
+    <span class="tab">book.ts</span>
+  </div>
+  <div class="right">
+    <span class="dot"></span>
+    <span>main</span>
+    <span>UTF-8</span>
+    <span>LF</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- HERO TERMINAL -->
+  <div class="terminal">
+    <div class="terminal-bar">
+      <span class="tdot r"></span><span class="tdot y"></span><span class="tdot g"></span>
+      <span class="tpath">paul@autonomous-co: ~/autonomous-companies</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="prompt-user">paul@autonomous-co</span><span class="cmt">:</span><span class="prompt-arrow">~</span><span class="cmt">$</span> <span class="cmd">cat ./reboot.txt</span></div>
+
+      <pre class="ascii">
+  /$$$$$$  /$$$$$$$$ /$$$$$$$  /$$                              /$$$$$$  /$$    /$$$$$$$$
+ /$$__  $$|__  $$__/| $$__  $$| $$                /$$          /$$__  $$| $$   |__  $$__/
+| $$  \__/   | $$   | $$  \ $$| $$               | $$         | $$  \ $$| $$      | $$
+| $$         | $$   | $$$$$$$/| $$             /$$$$$$$$      | $$$$$$$$| $$      | $$
+| $$         | $$   | $$__  $$| $$            |__  $$__/      | $$__  $$| $$      | $$
+| $$    $$   | $$   | $$  \ $$| $$               | $$         | $$  | $$| $$      | $$
+|  $$$$$$/   | $$   | $$  | $$| $$$$$$$$         |__/         | $$  | $$| $$$$$$$$| $$
+ \______/    |__/   |__/  |__/|________/                      |__/  |__/|________/|__/
+
+
+
+                  /$$$$$$   /$$$$$$  /$$      /$$ /$$$$$$$   /$$$$$$  /$$   /$$ /$$     /$$
+    /$$          /$$__  $$ /$$__  $$| $$$    /$$$| $$__  $$ /$$__  $$| $$$ | $$|  $$   /$$/
+   | $$         | $$  \__/| $$  \ $$| $$$$  /$$$$| $$  \ $$| $$  \ $$| $$$$| $$ \  $$ /$$/
+ /$$$$$$$$      | $$      | $$  | $$| $$ $$/$$ $$| $$$$$$$/| $$$$$$$$| $$ $$ $$  \  $$$$/
+|__  $$__/      | $$      | $$  | $$| $$  $$$| $$| $$____/ | $$__  $$| $$  $$$$   \  $$/
+   | $$         | $$    $$| $$  | $$| $$\  $ | $$| $$      | $$  | $$| $$\  $$$    | $$
+   |__/         |  $$$$$$/|  $$$$$$/| $$ \/  | $$| $$      | $$  | $$| $$ \  $$    | $$
+                 \______/  \______/ |__/     |__/|__/      |__/  |__/|__/  \__/    |__/
+      </pre>
+
+      <h1 class="brand">Ctrl <span class="plus">+</span> Alt <span class="plus">+</span> Company</h1>
+      <div class="tagline">// the shortcuts to rebooting in the AI-Driven Enterprise era…</div>
+
+      <div style="margin-top: 18px;">
+        <span class="prompt-user">paul@autonomous-co</span><span class="cmt">:</span><span class="prompt-arrow">~</span><span class="cmt">$</span> <span class="cmd">./hello.sh --topic="autonomous-companies"</span>
+      </div>
+
+      <div class="intro-block">
+        <span class="cmt">/**</span><br>
+        <span class="cmt"> *</span> I believe that we are moving towards a future in which incumbent enterprises<br>
+        <span class="cmt"> *</span> are competing in the marketplace with "self-driving" companies that are run<br>
+        <span class="cmt"> *</span> by AI agents. Here you will find my favorite resources on fully autonomous<br>
+        <span class="cmt"> *</span> companies.<br>
+        <span class="cmt"> *</span><br>
+        <span class="cmt"> *</span>     — <span class="var">paul</span><br>
+        <span class="cmt"> */</span>
+      </div>
+
+      <div style="margin-top: 26px;">
+        <span class="prompt-user">paul@autonomous-co</span><span class="cmt">:</span><span class="prompt-arrow">~</span><span class="cmt">$</span>
+        <span class="kw">npm</span> <span class="cmd">run</span> <span class="str">"reading-list"</span>
+        <span class="cmt"># scroll down ↓</span>
+        <span class="blink" style="color:var(--accent);">█</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- READING LIST (reverse chronological) -->
+  <section id="reading">
+    <div class="section-head">
+      <h2><span class="punc">&lt;</span><span class="name">ReadingList</span> <span class="args">items</span><span class="punc">={</span><span class="num">19</span><span class="punc">}</span> <span class="args">order</span><span class="punc">=</span><span class="str">"desc"</span> <span class="punc">/&gt;</span></h2>
+      <span class="meta">// sorted by date · newest → oldest</span>
+    </div>
+
+    <div class="grid">
+
+      <!-- 01 Express Computer · 2026-04-28 -->
+      <article class="card">
+        <span class="card-num">01</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/1dc464a8-5433-4cf0-b0cc-5da1d3dd22b1/Artificial-Intelligence.jpeg?format=750w" alt="Express Computer — zero-person company governance" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=expresscomputer.in&sz=32" alt="" />express computer</span>
+            <span>· dr. ashish chandra</span><span>· 2026-04-28</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://www.expresscomputer.in/guest-blogs/the-zero-person-company-is-not-science-fiction-it-is-a-governance-crisis/134571/" target="_blank" rel="noopener">The zero person company is not science fiction — It is a governance crisis</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 02 The Tennessean · 2026-03-27 -->
+      <article class="card">
+        <span class="card-num">02</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/f15bc0c9-6e14-4601-9842-4c7dd530edbb/Gemini_Generated_Image_7hvphb7hvphb7hvp.png?format=750w" alt="The Tennessean — zero-person companies are here" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=tennessean.com&sz=32" alt="" />the tennessean</span>
+            <span>· jj rosen</span><span>· 2026-03-27</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://www.tennessean.com/story/money/business/2026/03/27/zero-person-companies-marketing-customer-service-sales/89318218007/" target="_blank" rel="noopener">Zero-person companies are here; that's not a bad thing</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 03 Prototype · 2026-03-06 -->
+      <article class="card">
+        <span class="card-num">03</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/85e07157-fbb6-4dba-ae64-b6cffce4857f/Screenshot+2026-03-09+at+10.57.35%E2%80%AFAM.png?format=750w" alt="Prototype — AI runs your startup while you sleep" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=prototypecap.com&sz=32" alt="" />prototype</span>
+            <span>· andreas klinger</span><span>· 2026-03-06</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://updates.prototypecap.com/p/this-ai-runs-your-startup-while-you" target="_blank" rel="noopener">This AI runs your startup while you sleep</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 04 Surge AI · 2026-02-25 -->
+      <article class="card">
+        <span class="card-num">04</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/e83872f0-9330-4023-89d8-5bbdf04a30c0/6997509432b35134dcb43c21_699740bdf323d0f69229ada9_ChatGPT+Image+Feb+19%2C+2026%2C+11_39_31+AM.jpg?format=750w" alt="Surge AI — EnterpriseBench CoreCraft" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=surgehq.ai&sz=32" alt="" />surge ai</span>
+            <span>· 2026-02-25</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://surgehq.ai/blog/enterprisebench-corecraft" target="_blank" rel="noopener">EnterpriseBench: CoreCraft — Measuring AI Agents in Chaotic, Enterprise RL Environments</a></h3>
+          <div class="card-foot"><span>// research</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 05 Artificiality · 2026-02-21 -->
+      <article class="card">
+        <span class="card-num">05</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/58231340-b2c6-474e-a5c3-93bda3389e38/burnt_trees.webp?format=750w" alt="Artificiality — replaceable people, replaceable business" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=artificialityinstitute.org&sz=32" alt="" />artificiality</span>
+            <span>· dave edwards</span><span>· 2026-02-21</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://journal.artificialityinstitute.org/if-your-people-are-replaceable-your-business-might-be-too/" target="_blank" rel="noopener">If Your People Are Replaceable, Your Business Might Be Too</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 06 LinkedIn — Mark Condon · 2026-02-17 -->
+      <article class="card">
+        <span class="card-num">06</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/3dcfd911-5ea8-4fc8-84ca-5285a73faa47/1771291194374.jpeg?format=750w" alt="LinkedIn — The Rise of the Synthetic Organisation" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=linkedin.com&sz=32" alt="" />linkedin</span>
+            <span>· mark condon</span><span>· 2026-02-17</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://www.linkedin.com/pulse/rise-synthetic-organisation-mark-condon-9jnfc/" target="_blank" rel="noopener">The Rise of the Synthetic Organisation</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 07 Remio · 2026-02-07 -->
+      <article class="card">
+        <span class="card-num">07</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/2cb400e3-71ee-484a-967d-071c2e62984c/80334c_20dcd544b52e47a68921752410b407cc%7Emv2.jpeg?format=750w" alt="Remio — SaaS-pocalypse 2026" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=remio.ai&sz=32" alt="" />remio</span>
+            <span>· olivia johnson</span><span>· 2026-02-07</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://www.remio.ai/post/saas-pocalypse-2026-why-ai-agents-are-wiping-out-300b-in-software-value" target="_blank" rel="noopener">SaaS-pocalypse 2026: Why AI Agents Are Wiping Out $300B in Software Value</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 08 Entrepreneur · 2026-02-07 -->
+      <article class="card">
+        <span class="card-num">08</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/5f6bde88-6c2a-4acb-aa42-311e6f1f3dad/1770231355-PDFConverterEditor1.jpeg?format=750w" alt="Entrepreneur — ChatGPT browser runs your business" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=entrepreneur.com&sz=32" alt="" />entrepreneur</span>
+            <span>· ben angel</span><span>· 2026-02-07</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://www.entrepreneur.com/growing-a-business/chatgpts-new-internet-browser-can-run-80-of-a-1-person/502518" target="_blank" rel="noopener">ChatGPT's New Internet Browser Can Run 80% of a 1-Person Business — No Tech Skills Required</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 09 Forbes · 2026-01-26 -->
+      <article class="card">
+        <span class="card-num">09</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/dc6be14d-7340-4d79-81f7-a35926b8cdba/0x0.jpeg?format=750w" alt="Forbes — million-dollar business with zero employees" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=forbes.com&sz=32" alt="" />forbes</span>
+            <span>· jodie cook</span><span>· 2026-01-26</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://www.forbes.com/sites/jodiecook/2026/01/26/5-chatgpt-prompts-to-build-a-million-dollar-business-with-zero-employees/" target="_blank" rel="noopener">5 ChatGPT Prompts To Build A Million-Dollar Business With Zero Employees</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 10 KPMG · 2025-11-20 -->
+      <article class="card">
+        <span class="card-num">10</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/8f7cb622-5b64-4912-a4fd-6ff2021a3937/Screenshot+2025-11-26+at+3.09.13%E2%80%AFPM.png?format=750w" alt="KPMG — Can AI run a company?" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=kpmg.com&sz=32" alt="" />kpmg</span>
+            <span>· sander klous</span><span>· 2025-11-20</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://kpmg.com/nl/en/home/media/press-releases/2025/11/ai-zero-person-company-experiment.html" target="_blank" rel="noopener">Can AI run a company without people?</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 11 Futurism · 2025-11-15 -->
+      <article class="card">
+        <span class="card-num">11</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/15b416f8-8d59-4646-85d4-0689b42fe575/company-run-entirely-ai-generated-employees-chaos.webp?format=750w" alt="Futurism — chaos at AI-run company" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=futurism.com&sz=32" alt="" />futurism</span>
+            <span>· victor tangermann</span><span>· 2025-11-15</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://futurism.com/artificial-intelligence/company-run-entirely-ai-generated-employees-chaos" target="_blank" rel="noopener">Company Run Almost Entirely by AI-Generated Employees Descends Into Chaos</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 12 WIRED · 2025-11-12 -->
+      <article class="card">
+        <span class="card-num">12</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/f47de6c0-8f57-4fa2-a821-39097104ebe6/WIRED-AI-as_Nonhuman-Resources.jpeg?format=750w" alt="WIRED — AI as Nonhuman Resources" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=wired.com&sz=32" alt="" />wired</span>
+            <span>· evan ratliff</span><span>· 2025-11-12</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://www.wired.com/story/all-my-employees-are-ai-agents-so-are-my-executives/" target="_blank" rel="noopener">All of My Employees Are AI Agents, and So Are My Executives</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 13 Yahoo / Newsfile — Vanka · 2025-11-12 -->
+      <article class="card">
+        <span class="card-num">13</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/7e31855e-5778-4e0a-bbb8-91ccff0549a6/274162_vanka.jpg?format=750w" alt="Vanka acquires Fluxoid AI" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=finance.yahoo.com&sz=32" alt="" />yahoo finance</span>
+            <span>· newsfile</span><span>· 2025-11-12</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://finance.yahoo.com/news/vanka-acquires-fluxoid-ai-powering-010000874.html" target="_blank" rel="noopener">Vanka Acquires Fluxoid AI, Powering Its Autonomous Company OS with Precision AI</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 14 Entonomy · 2025-10-29 -->
+      <article class="card">
+        <span class="card-num">14</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/21e39e92-9969-4c2e-b43d-61480c1a5b39/Rcuh7iqWEDcoAjs4On285zSCM.jpeg?format=750w" alt="Entonomy — autonomous enterprise economics" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=entonomy.com&sz=32" alt="" />entonomy</span>
+            <span>· 2025-10-29</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://entonomy.com/articles/the-marginal-economics-of-autonomous-enterprise-a-journey-from-concept-to-0-61" target="_blank" rel="noopener">The Marginal Economics of Autonomous Enterprise: A Journey from Concept to $0.61</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 15 Anthropic · 2025-06-27 -->
+      <article class="card">
+        <span class="card-num">15</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/279b69a7-1ccb-4eb7-af4f-1954c7347fe2/5839c24ae34a56c842a394c2a01c2e2ce2a6cd13-2880x1620.jpeg?format=750w" alt="Anthropic — Project Vend" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=anthropic.com&sz=32" alt="" />anthropic</span>
+            <span>· 2025-06-27</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://www.anthropic.com/research/project-vend-1" target="_blank" rel="noopener">Project Vend: Can Claude run a small shop?</a></h3>
+          <div class="card-foot"><span>// research</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 16 Paul Cheek · 2025-02-03 -->
+      <article class="card">
+        <span class="card-num">16</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/32c041e0-1d3d-4001-999b-d3860e562c55/pexels-cottonbro-6153354.jpg?format=750w" alt="The Rise of AI-Led Organizations" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=paulcheek.com&sz=32" alt="" />paul cheek</span>
+            <span>· 2025-02-03</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://www.paulcheek.com/articles/the-rise-of-ai-led-organizations-lessons-from-firing-231-ceos-in-a-day" target="_blank" rel="noopener">The Rise of AI-Led Organizations: Lessons from Firing 231 CEOs in a Day</a></h3>
+          <div class="card-foot"><span>// internal</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 17 Paul Cheek · 2024-12-02 -->
+      <article class="card">
+        <span class="card-num">17</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/e6e162fe-b0ba-4c88-bb77-00962e341e8c/pexels-ron-lach-9783353.jpg?format=750w" alt="What would an AI-run company of the future look like?" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=paulcheek.com&sz=32" alt="" />paul cheek</span>
+            <span>· 2024-12-02</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://www.paulcheek.com/articles/what-would-an-ai-run-company-of-the-future-look-like" target="_blank" rel="noopener">What would an AI-run company of the future look like?</a></h3>
+          <div class="card-foot"><span>// internal</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 18 Project Sid · 2024-11-01 -->
+      <article class="card">
+        <span class="card-num">18</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/621c929b-f1aa-49df-980d-3ba5220fec20/hq720.jpg?format=750w" alt="Project Sid — many-agent simulations" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=fundamentalresearchlabs.com&sz=32" alt="" />fundamental research labs</span>
+            <span>· nico christie</span><span>· 2024-11-01</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://fundamentalresearchlabs.com/blog/project-sid" target="_blank" rel="noopener">Project Sid: Many-agent simulations toward AI civilization</a></h3>
+          <div class="card-foot"><span>// research</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+      <!-- 19 Cybernews · 2024-09-04 -->
+      <article class="card">
+        <span class="card-num">19</span>
+        <img class="card-img" loading="lazy" src="https://images.squarespace-cdn.com/content/v1/61e359af87127058e41eeae8/0ee32344-0e5e-458e-a2b5-3302c97de393/ai_civ_minecraft.jpeg?format=750w" alt="Cybernews — AI agents building civilizations on Minecraft" />
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=cybernews.com&sz=32" alt="" />cybernews</span>
+            <span>· justinas vainilavičius</span><span>· 2024-09-04</span>
+          </div>
+          <h3 class="card-title"><a class="title-link" href="https://cybernews.com/ai-news/ai-agents-building-civilizations-minecraft/" target="_blank" rel="noopener">These AI agents are building 'civilizations' on Minecraft</a></h3>
+          <div class="card-foot"><span>// external</span><span class="open">open →</span></div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- SPEAKING -->
+  <section id="speaking">
+    <div class="section-head">
+      <h2><span class="kw">async function</span> <span class="name">speak</span><span class="punc">()</span></h2>
+      <span class="meta">// keynotes · workshops · lectures · advisory</span>
+    </div>
+    <div class="speak-card">
+      <div>
+        <h3>Keynotes, Workshops, Lectures, and Advisory</h3>
+        <p>For industry conferences, corporate training programs, academic courses &amp; programs, and more, Paul Cheek delivers high-energy, engaging, and insightful talks.</p>
+      </div>
+      <a class="btn" href="https://www.paulcheek.com/contact-paul-cheek" target="_blank" rel="noopener">$ ./book-paul.sh →</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="links">
+      <a href="https://www.paulcheek.com/about-paul-cheek" target="_blank" rel="noopener">about</a>
+      <a href="https://www.paulcheek.com/book" target="_blank" rel="noopener">book</a>
+      <a href="https://www.paulcheek.com/articles" target="_blank" rel="noopener">articles</a>
+      <a href="https://www.paulcheek.com/teaching" target="_blank" rel="noopener">teaching</a>
+      <a href="https://www.paulcheek.com/consulting" target="_blank" rel="noopener">consulting</a>
+      <a href="http://linkedin.com/in/prcjr" target="_blank" rel="noopener">linkedin</a>
+      <a href="https://www.paulcheek.com/contact-paul-cheek" target="_blank" rel="noopener">contact</a>
+    </div>
+    <div>
+      <span class="cmt">// Ⓒ Cheek LLC · built with</span>
+      <span style="color: var(--accent-5);">&lt;3</span>
+      <span class="cmt">and a lot of</span>
+      <span style="color: var(--accent-3);">{ caffeine }</span>
+    </div>
+  </footer>
+</div>
+
+<div class="statusline">
+  <div class="left">
+    <span>● MAIN</span>
+    &nbsp;·&nbsp; autonomous-companies.md &nbsp;·&nbsp; 19 articles · sorted desc
+  </div>
+  <div class="right">
+    <span>UTF-8</span>
+    <span>Markdown</span>
+    <span>Ln 1, Col 1</span>
+    <span style="color: var(--accent);">●</span>
+  </div>
+</div>
+
+</body>
+</html>
