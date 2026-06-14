@@ -180,6 +180,11 @@
     border-bottom: 1px solid var(--border-2);
     filter: saturate(0.95);
   }
+  .card-img.logo {
+    object-fit: contain;
+    background: #000;
+    padding: 14% 18%;
+  }
   .card.text-only .card-img-placeholder {
     aspect-ratio: 16 / 9;
     width: 100%;
@@ -442,9 +447,9 @@
       </article>
 
       <!-- 04 The New York Times — Editor's Note · 2026-04-11 -->
-      <article class="card text-only">
+      <article class="card">
         <span class="card-num">04</span>
-        <div class="card-img-placeholder">// no thumbnail on file</div>
+        <img class="card-img logo" loading="lazy" src="images/nyt-logo.png" alt="The New York Times — Editor's Note" />
         <div class="card-body">
           <div class="card-meta">
             <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=nytimes.com&sz=32" alt="" />the new york times</span>
@@ -456,9 +461,9 @@
       </article>
 
       <!-- 05 The New York Times — Medvi · 2026-04-02 -->
-      <article class="card text-only">
+      <article class="card">
         <span class="card-num">05</span>
-        <div class="card-img-placeholder">// no thumbnail on file</div>
+        <img class="card-img" loading="lazy" src="images/nyt-medvi-founder.webp" alt="The New York Times — Medvi billion-dollar AI company" />
         <div class="card-body">
           <div class="card-meta">
             <span class="source"><img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=nytimes.com&sz=32" alt="" />the new york times</span>
